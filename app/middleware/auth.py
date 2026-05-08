@@ -21,7 +21,7 @@ def get_current_user(
     if is_token_blacklisted(token, db):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Токен отозван")
 
-    user = get_user_by_id(payload.get("sub"), db)
+    user = get_user_by_id(int(payload.get("sub")), db)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
 
