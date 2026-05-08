@@ -1,0 +1,9 @@
+import os
+os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
+os.environ.setdefault("SECRET_KEY", "supersecretkey1234567890abcdef12")
+os.environ.setdefault("ALGORITHM", "HS256")
+os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+os.environ.setdefault("REFRESH_TOKEN_EXPIRE_DAYS", "30")
+os.environ.setdefault("AES_KEY", "0123456789abcdef0123456789abcdef")
+os.environ.setdefault("ENVIRONMENT", "dev")
+os.environ.setdefault("RATELIMIT_ENABLED", "0")
