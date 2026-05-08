@@ -1,0 +1,11 @@
+from sqlalchemy import Column, Integer, String, Text
+from app.database import Base
+
+
+class Category(Base):
+    __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True)
+    image_url = Column(Text)
+    name = Column(String(255))
+    type = Column(String(255))
