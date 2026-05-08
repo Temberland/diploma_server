@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.user import UserRegister, UserLogin, TokenResponse, RefreshRequest, UserResponse
@@ -13,10 +15,12 @@ from app.models.user import User
 
 router = APIRouter()
 bearer_scheme = HTTPBearer()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def register(data: UserRegister, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, data: UserRegister, db: Session = Depends(get_db)):
     if get_user_by_email(data.email, db):
         raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
 
@@ -27,7 +31,8 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(data: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, data: UserLogin, db: Session = Depends(get_db)):
     user = get_user_by_email(data.email, db)
     if not user or not verify_password(data.password, user.hash_password):
         raise HTTPException(status_code=401, detail="Неверный email или пароль")
@@ -38,7 +43,8 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 
 
 @router.post("/refresh", response_model=TokenResponse)
-def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def refresh(request: Request, data: RefreshRequest, db: Session = Depends(get_db)):
     payload = decode_token(data.refresh_token)
 
     if not payload or payload.get("type") != "refresh":
