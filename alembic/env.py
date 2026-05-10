@@ -19,7 +19,7 @@ from app.models.pattern import Pattern
 from app.models.fixed_expense import FixedExpense
 from app.models.audit_log import AuditLog
 from app.models.token_blacklist import TokenBlacklist
-from app.models.__init__ import UserAccount
+from app.models.user_account import UserAccount
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
