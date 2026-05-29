@@ -20,6 +20,7 @@ from app.models.fixed_expense import FixedExpense
 from app.models.audit_log import AuditLog
 from app.models.token_blacklist import TokenBlacklist
 from app.models.user_account import UserAccount
+from app.models.shared_account import SharedAccountMember, SharedAccountInvite
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
