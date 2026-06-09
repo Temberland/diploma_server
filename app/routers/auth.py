@@ -5,7 +5,14 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas.user import UserRegister, UserLogin, TokenResponse, RefreshRequest, UserResponse
+from app.schemas.user import (
+    UserRegister, UserLogin, TokenResponse, RefreshRequest, UserResponse,
+    ForgotPasswordRequest, ResetPasswordRequest,
+)
+from app.services.email import (
+    create_verification_token, send_verification_email, verify_email_token,
+    create_reset_token, send_reset_email, apply_reset_token,
+)
 from app.services.auth import (
     get_user_by_email, verify_password, register_user,
     create_access_token, create_refresh_token,
@@ -32,10 +39,16 @@ def rate_limit(limit: str):
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 @rate_limit("5/minute")
-def register(request: Request, data: UserRegister, db: Session = Depends(get_db)):
+async def register(request: Request, data: UserRegister, db: Session = Depends(get_db)):
     if get_user_by_email(data.email, db):
         raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
     user = register_user(data.email, data.password, data.currency, db)
+    # Отправляем письмо подтверждения; ошибка SMTP не ломает регистрацию
+    try:
+        ver_token = create_verification_token(user.id, db)
+        await send_verification_email(user.email, ver_token)
+    except Exception:
+        pass
     return TokenResponse(
         access_token=create_access_token({"sub": user.id}),
         refresh_token=create_refresh_token({"sub": user.id})
@@ -84,3 +97,37 @@ def logout(
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    """Подтверждение email по токену из письма."""
+    if not verify_email_token(token, db):
+        raise HTTPException(status_code=400, detail="Неверный или истёкший токен")
+    return {"detail": "Email подтверждён"}
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+@rate_limit("3/minute")
+async def forgot_password(
+    request: Request,
+    data: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """Запрос сброса пароля. Всегда возвращает 200 — защита от email enumeration."""
+    user = get_user_by_email(data.email, db)
+    if user:
+        try:
+            reset_token = create_reset_token(user.id, db)
+            await send_reset_email(user.email, reset_token)
+        except Exception:
+            pass
+    return {"detail": "Если email зарегистрирован, ссылка для сброса отправлена"}
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Установка нового пароля по токену из письма."""
+    if not apply_reset_token(data.token, data.new_password, db):
+        raise HTTPException(status_code=400, detail="Неверный или истёкший токен")
+    return {"detail": "Пароль успешно изменён"}

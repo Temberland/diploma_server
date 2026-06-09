@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     AES_KEY: str  # 32 байта в hex
     ENVIRONMENT: str = "dev"
+    MAIL_USERNAME: str = ""
+    MAIL_PASSWORD: str = ""
+    MAIL_FROM: str = ""
+    FRONTEND_URL: str = "http://localhost:8000"
 
     class Config:
         env_file = ".env"

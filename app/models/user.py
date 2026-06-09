@@ -12,3 +12,4 @@ class User(Base):
     is_subscripted = Column(Boolean, default=False)
     end_date = Column(Date, nullable=True)
     is_active = Column(Boolean, default=True)
+    is_email_verified = Column(Boolean, default=False)
