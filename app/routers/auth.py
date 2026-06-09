@@ -44,11 +44,8 @@ async def register(request: Request, data: UserRegister, db: Session = Depends(g
         raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
     user = register_user(data.email, data.password, data.currency, db)
     # Отправляем письмо подтверждения; ошибка SMTP не ломает регистрацию
-    try:
-        ver_token = create_verification_token(user.id, db)
-        await send_verification_email(user.email, ver_token)
-    except Exception:
-        pass
+    ver_token = create_verification_token(user.id, db)
+    await send_verification_email(user.email, ver_token)
     return TokenResponse(
         access_token=create_access_token({"sub": user.id}),
         refresh_token=create_refresh_token({"sub": user.id})
