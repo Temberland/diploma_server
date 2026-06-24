@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey
 from app.database import Base
 
 
@@ -9,4 +9,7 @@ class Limit(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
     sum = Column(Integer)
-    period = Column(DateTime, nullable=True)
+    period = Column(String(16), nullable=True)  # WEEK / MONTH / QUARTER / YEAR
+    is_notification_enabled = Column(Integer, default=1)
+    is_deleted = Column(Integer, default=0)
+    version = Column(Integer, default=1)
